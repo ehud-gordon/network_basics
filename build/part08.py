@@ -113,8 +113,9 @@ def build(B):
     * **Multiplexing**: many programs share one IP address; the port field separates their data.
     * **Demultiplexing**, UDP: the destination (IP, port) alone selects the socket.
     * **Demultiplexing**, TCP: a *connection* is identified by the **5-tuple**
-      (protocol, source IP, source port, destination IP, destination port). A segment that matches
-      no connection but targets a **listening** socket's port starts a new connection.
+      (protocol, source IP, source port, destination IP, destination port). A **SYN** that matches
+      no connection but targets a **listening** socket's port starts a new connection; any other
+      unmatched segment is answered with a reset.
 
     ```
     server 10.0.0.5:80  ── listening socket (accepts new connections)
@@ -441,7 +442,7 @@ def build(B):
                r"""
                * `parse_tcp(p, n)`: return `std::nullopt` if `n < 20`, `data_offset < 5`, or the header does not fit in `n`.
                * `flags_to_string(f)`: flag names joined by `|`, **least-significant bit first** (`FIN`, `SYN`, `RST`, `PSH`,
-                 `ACK`, `URG`, `ECE`, `CWR`), so that 0x12 → `"SYN|ACK"`, matching Wireshark. Return `"none"` for 0.
+                 `ACK`, `URG`, `ECE`, `CWR`), so that 0x12 → `"SYN|ACK"`, matching Wireshark (the standard packet-capture GUI). Return `"none"` for 0.
                """,
                r"""
                namespace ex8_5 {
@@ -585,7 +586,7 @@ def build(B):
     can it achieve?""", P=ports),
                f"""
                {ports} ports / 60 s ≈ **{ports / 60:.0f} connections per second**. Beyond that, `connect()` fails with "address
-               not available" because every port for that 5-tuple is still in TIME_WAIT. Remedies: keep connections alive and
+               not available" because every local port for this (client IP, server IP, server port) combination is still in TIME_WAIT. Remedies: keep connections alive and
                reuse them (HTTP keep-alive, connection pools), let the *server* close first, or spread load over more
                IPs/ports. *Misconception:* "TIME_WAIT is a bug to disable". It protects against stale segments corrupting a new
                connection.
@@ -696,7 +697,9 @@ Transition step(State s, Event e) {
     **Go-Back-N**: the receiver accepts only in-order data and sends cumulative ACKs; after a loss
     the sender resends *everything* from the lost segment on. **Selective repeat** buffers
     out-of-order data and resends only what is missing. TCP sits in between: cumulative ACKs, out-of-order
-    buffering, and **fast retransmit** after 3 duplicate ACKs, without waiting for the timer.
+    buffering, and **fast retransmit**. Because TCP's ACK is cumulative, every segment arriving after a gap
+    triggers the *same* ACK number again, a **duplicate ACK**; three duplicate ACKs make the sender
+    resend the missing segment at once, without waiting for the timer.
     """)
     B.question("compute", r"""1 Gb/s link, RTT 30 ms, 1500-byte segments. What is the utilisation with stop-and-wait? With a window of
     100 segments? How many segments must be in flight to fill the link?""",

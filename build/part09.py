@@ -213,10 +213,9 @@ def build(B):
                r"""
                A single thread suffices because `sendto` never waits for the receiver: the datagram is queued in the server socket's
                receive buffer until `recvfrom` collects it. The client never called `bind`, yet it has a port: the kernel assigned
-               an **ephemeral** one at the first `sendto`, and the server learned it from the datagram's source port, the same
-               5-tuple mechanism as §8.1.
+               an **ephemeral** one at the first `sendto`, and the server learned it from the datagram's source-port field.
                """)
-    B.question("why", r"""What happens if the client's datagram is lost (impossible on loopback, common on Wi-Fi) in the code above?
+    B.question("why", r"""What happens if the client's datagram is lost (rare on loopback, e.g. when the receive buffer is full; common on Wi-Fi) in the code above?
     What would a real UDP application need to add?""",
                r"""
                `recvfrom` on the server times out after 2 s and the function returns `""`. Without the timeout it would block
@@ -234,7 +233,8 @@ def build(B):
     server                                        client
     socket(SOCK_STREAM)
     bind(127.0.0.1:0)
-    listen(fd, backlog)    <- LISTEN: the kernel now completes handshakes on its own
+    listen(fd, backlog)    <- LISTEN: the kernel now completes handshakes on its own and queues
+                              up to `backlog` finished connections that await accept()
     accept(fd, &peer)  ·························  connect(server address)    <- 3-way handshake
       └─ returns a NEW fd for this one connection
     recv / send        <=======================>  send / recv
@@ -335,9 +335,8 @@ def build(B):
                Creating the listening socket *before* starting the thread removes the race: once `listen` has returned, the kernel
                completes the handshake of an incoming `connect` and queues the connection even if `accept` has not been called yet.
                The timeouts guarantee termination: if `connect` fails, `accept` gives up after 2 s, the thread ends, and `join`
-               returns. Each run usually gets a different ephemeral port. The kernel may reuse a port number only for a *different*
-               5-tuple (here, a different server port), because the old connection is still in `TIME_WAIT` on the side that
-               closed first (§8.7).
+               returns. Each run uses a new server port, so even if the kernel reuses a client port number, the 5-tuple is different;
+               the old connection's `TIME_WAIT` entry (§8.7) stays with whichever side closed first.
                """, snippet_key="tcp_echo")
     B.question("concept", r"""In `tcp_echo`, how many file descriptors does the server side use, and which 5-tuple does the accepted one
     represent? Which socket would a second client's SYN reach?""",
@@ -503,7 +502,7 @@ def build(B):
                  on error.
                * `tcp_framed(msgs, recv_calls)`: a server thread accepts one connection and reads with a deliberately tiny
                  buffer, **`recv(fd, buf, 3, 0)`**, feeding a `lib9d::FrameDecoder` and collecting messages until it has
-                 `msgs.size()` of them or `recv` returns ≤ 0. Count the `recv` calls in `recv_calls`. The client sends all
+                 `msgs.size()` of them or `recv` returns ≤ 0. Count the successful `recv` calls (those returning > 0) in `recv_calls`. The client sends all
                  frames with **one** `send_all`, then closes. Return the messages the server collected. Use the same
                  listen-before-thread, timeout, and join pattern as §9.3.
                """,

@@ -45,7 +45,7 @@ def build(B):
                **Costs:** (1) *overhead*: every layer adds its own header bytes; (2) *information hiding*: a layer
                cannot see what it might need. A web browser does not know the link is a lossy radio, and the radio does
                not know which bytes are urgent. (3) Some functions get *duplicated* at several layers (error detection
-               exists at layers 2 and 4). *Misconception:* layers are a law of nature; in fact they are an engineering
+               exists at layers 2, 3 (the IPv4 header checksum) and 4). *Misconception:* layers are a law of nature; in fact they are an engineering
                convention that real systems sometimes bend for performance.
                """)
 
@@ -61,7 +61,7 @@ def build(B):
     |---|---|---|---|---|
     | 7 | Application | the service a program wants | data (message) | HTTP (fetch web pages), DNS (look up names) |
     | 6 | Presentation | how data is represented: encoding, compression, encryption | data | UTF-8, JPEG |
-    | 5 | Session | managing a long dialogue: open, checkpoint, resume | data | RPC session control |
+    | 5 | Session | managing a long dialogue: open, checkpoint, resume | data | RPC (remote procedure call) session control |
     | 4 | Transport | deliver data between **programs** on two hosts | segment (TCP) / datagram (UDP) | TCP (reliable byte stream), UDP (single messages) |
     | 3 | Network | deliver packets between **hosts** across many networks | packet | IP (Internet Protocol) |
     | 2 | Data link | deliver frames between **neighbours** on one link | frame | Ethernet (wired), Wi-Fi |
@@ -70,8 +70,8 @@ def build(B):
     Mnemonic, bottom-up: **P**lease **D**o **N**ot **T**hrow **S**ausage **P**izza **A**way.
 
     Each layer has its own address:
-    * a **MAC address** (L2) is a 48-bit identifier of a network interface, meaningful on the local link only;
-    * an **IP address** (L3) is a 32-bit identifier of a host's interface, meaningful across the Internet;
+    * a **MAC address** (L2; MAC = media access control) is a 48-bit identifier of a network interface, meaningful on the local link only;
+    * an **IPv4 address** (L3) is a 32-bit identifier of a host's interface, meaningful across the Internet;
     * a **port** (L4) is a 16-bit number identifying which program on a host the data is for.
     """)
     B.question("concept", r"""At which OSI layer does each live: (a) a MAC address, (b) an IP address, (c) a port number?
@@ -134,9 +134,10 @@ def build(B):
     ```
 
     Going **up** on the receiver, each layer checks and strips its own header, then hands the
-    payload to the layer above: **decapsulation**. Every header contains a field naming the protocol
-    of its payload (for example "this IP packet carries TCP"), so the receiver knows which upper-layer
-    code to call. Dispatching on that field is **demultiplexing**.
+    payload to the layer above: **decapsulation**. The link and network headers contain a field naming the protocol of their
+    payload (for example "this IP packet carries TCP"), so the receiver knows which upper-layer code
+    to call; the transport layer instead uses the **port** to pick the receiving program. Dispatching
+    on such a field is **demultiplexing**.
     """)
     B.question("compute", fill(r"""A @M@-byte application message goes out over TCP (20-byte header), IP (20-byte header), and
     Ethernet (14-byte header + 4-byte trailer). How big is the frame, and what fraction of it is application data?""", M=msg),
@@ -149,8 +150,8 @@ def build(B):
     B.question("why", r"""Why must each header carry a "type of my payload" field? Couldn't the receiver just guess from the bytes?""",
                r"""
                The payload is just bytes, and the same bytes could be a valid start of many different protocols, so guessing
-               is ambiguous and fragile. An IP layer may receive TCP, UDP or control messages; Ethernet may carry IPv4,
-               IPv6 or other protocols. An explicit type field makes demultiplexing a simple table lookup and keeps the
+               is ambiguous and fragile. An IP layer may receive TCP, UDP or control messages; Ethernet may carry
+               several versions of IP or other protocols. An explicit type field makes demultiplexing a simple table lookup and keeps the
                layers independent, since the lower layer never parses the upper header.
                """)
 
@@ -240,7 +241,8 @@ def build(B):
 
                `decapsulate` returns `std::optional<std::string>` (from `<optional>`): an object that holds either a value
                or nothing. Return `std::nullopt` for "nothing" (any layer failed) or the string itself on success. The caller
-               tests it with `if (r)` and reads it with `*r`. Use `lib3b::add_header` / `lib3b::strip_header` (PROVIDED above).
+               tests it with `if (r)` and reads it with `*r`; `r.value_or(x)` returns the value, or `x` if empty (the
+               test cells use this to stay safe on unsolved stubs). Use `lib3b::add_header` / `lib3b::strip_header` (PROVIDED above).
 
                For `"hi"` the frame is @N@ bytes:
                ```
@@ -310,7 +312,7 @@ def build(B):
          "OSI: Physical, Data link, Network, Transport, Session, Presentation, Application (PDUs: bits, frame, packet, segment/datagram, data).",
          "TCP/IP folds OSI 5–7 into Application and 1–2 into Link.",
          "Encapsulation prepends a header per layer (plus a link trailer); decapsulation strips them in reverse.",
-         "A 'next protocol' field in each header drives demultiplexing."],
+         "A 'next protocol' field (Ethernet's type, IP's protocol) or the port (transport) drives demultiplexing."],
         ["what lives at L2, L3 and L4, and each layer's PDU name;",
          "how the OSI and TCP/IP models map onto each other;",
          "the byte overhead of headers for a small message;",

@@ -206,9 +206,10 @@ def build(B):
                """,
                r"""
                `~(1u << i)` is a mask with every bit set *except* bit *i*; AND-ing with it clears exactly that
-               bit. The `uint8_t(...)` casts matter: without them the expression is an `unsigned int` whose
-               upper 24 bits are garbage from the promoted `~`, which the implicit conversion on `return` would
-               truncate, but only by luck of the return type.
+               bit. Here the results always fit in 8 bits (the promoted `x` has zeros above bit 7, and the AND clears the
+               rest), and converting to `uint8_t` is well defined (modulo 256). The `uint8_t(...)` casts document that intent
+               and silence narrowing warnings. The real danger is a *bare* `~x`: for `uint8_t x = 0x0F`, `~x` is the `int`
+               `0xFFFFFFF0`, whose upper 24 bits are all set, so comparing it with `0xF0` fails.
                """)
 
     # ------------------------------------------------------------------ 1.4

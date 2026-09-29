@@ -208,7 +208,7 @@ def build(B):
 
     A **NIC** (network interface controller, or card) is the hardware that attaches a host to a
     link. It has two halves: the **PHY** chip (physical layer: converts between bits and signals,
-    including line coding) and the **MAC** logic (link layer: frames, addresses, error checks). The NIC:
+    including line coding) and the **MAC** (media access control) logic (link layer: frames, addresses, error checks). The NIC:
 
     * **serialises**: turns the bytes of an outgoing frame into a timed sequence of symbols, and
       *deserialises* incoming signals back into bytes;
@@ -526,8 +526,9 @@ def build(B):
                Parity only captures the count of 1s **mod 2**. Any even number of flips (2, 4, …) leaves it unchanged, so
                parity detects only odd-sized errors. Real noise tends to arrive in **bursts** (a spike of interference
                corrupts several *adjacent* bits), so multi-bit errors are common and would slip through ~50% of the time.
-               This motivates stronger codes that spread each bit's influence over many check bits: the 16-bit **Internet
-               checksum** (Part 6) and the 32-bit **CRC** that Ethernet appends to every frame (Part 5).
+               This motivates stronger codes: the 16-bit **Internet checksum** (Part 6), a simple sum that is better than parity
+               but still fairly weak, and the 32-bit **CRC** that Ethernet appends to every frame (Part 5), which spreads each
+               bit's influence over many check bits.
                """)
     B.recap(
         ["Media: copper (≤100 m for Ethernet), coax, fibre (long, clean), radio (shared, broadcast).",

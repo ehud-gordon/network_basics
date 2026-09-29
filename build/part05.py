@@ -127,7 +127,7 @@ def build(B):
                r"""
                Why a minimum at all? In the original shared-cable Ethernet a sender had to still be transmitting when news of a
                collision came back from the far end of the cable, so every frame had to last at least one round trip of the
-               cable, i.e. 64 bytes. Switched full-duplex Ethernet no longer needs this, but the rule remains for compatibility.
+               cable, i.e. 64 bytes. Switched full-duplex Ethernet (each cable carries both directions at once, so collisions cannot happen) no longer needs this, but the rule remains for compatibility.
                """)
 
     # ------------------------------------------------------------------ 5.2

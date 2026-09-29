@@ -40,7 +40,7 @@ def build(B):
                * **Sharing:** a link carrying one giant unit is monopolised for its whole duration; with small packets
                  many conversations interleave on the same link.
                * **Error recovery:** a corrupted bit ruins only one small packet, which is resent, rather than the whole gigabyte.
-               * **Buffering and pipelining:** a switch must store a whole unit before forwarding it (see §2.6), so
+               * **Buffering and pipelining:** a store-and-forward switch must receive a whole unit before forwarding it (§2.6), so
                  small packets need small buffers and let successive links work in parallel.
 
                *Misconception:* packets exist "because cables are short". Packetisation is about sharing and failure
@@ -126,7 +126,7 @@ def build(B):
     * Data *rates* use decimal prefixes: k = 10³, M = 10⁶, G = 10⁹. Memory and file sizes are often
       binary: KiB = 1024 B, MiB = 1024² B.
     """)
-    B.question("compute", r"""Your ISP sells "500 Mb/s". Ignoring overhead, how long does a 2 GB (2·10⁹ bytes) download take at best?""",
+    B.question("compute", r"""Your Internet provider sells "500 Mb/s". Ignoring overhead, how long does a 2 GB (2·10⁹ bytes) download take at best?""",
                f"""
                $\\dfrac{{2\\cdot10^9 \\cdot 8\\ \\text{{bits}}}}{{500\\cdot10^6\\ \\text{{bits/s}}}} = $ **{2e9 * 8 / 500e6:g} s**.
 

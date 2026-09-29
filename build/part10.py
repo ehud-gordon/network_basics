@@ -292,7 +292,7 @@ def build(B):
                Now write bytes instead of reading them. `build_syn_ack(syn, server_isn)` returns the reply frame:
 
                * **Ethernet**: swap the MAC addresses; EtherType 0x0800.
-               * **IPv4**: `0x45`, TOS 0, total length 44, identification 0, flags DF (bytes 6–7 = `0x4000`), TTL 64, protocol 6,
+               * **IPv4**: `0x45`, DSCP/ECN byte 0, total length 44, identification 0, flags DF (bytes 6–7 = `0x4000`), TTL 64, protocol 6,
                  checksum computed last, source/destination = the SYN's destination/source.
                * **TCP**: ports swapped; seq = `server_isn`; ack = SYN's seq + 1; data offset 6; flags SYN|ACK (0x12);
                  window 65160; urgent 0; options = MSS 1460 (`02 04 05 b4`); checksum computed over the pseudo-header + segment.
@@ -393,7 +393,7 @@ def build(B):
                  pseudo-header), after the 3-way handshake.
                * **L3 Network**: the kernel's IP adds src 192.168.1.10 and the server's IP as dst, TTL 64, header checksum;
                  longest-prefix match picks the default route → next hop = gateway.
-               * **L2 Data link**: ARP cache → gateway MAC; the NIC driver/NIC builds the 802.11/Ethernet frame (dst = gateway
+               * **L2 Data link**: ARP cache → gateway MAC; the NIC driver/NIC builds the Wi-Fi (IEEE 802.11)/Ethernet frame (dst = gateway
                  MAC) and appends the CRC.
                * **L1 Physical**: the NIC's PHY transmits radio symbols.
 

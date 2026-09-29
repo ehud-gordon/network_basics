@@ -586,7 +586,7 @@ def build(B):
     * **total length** = header + payload in bytes (so an IP packet is at most 65 535 bytes).
     * **TTL** (time to live): decremented by each router (§6.8).
     * **protocol** names the payload: this is IP's demultiplexing field.
-    * **DSCP/ECN** mark priority and congestion; identification, flags and fragment offset serve
+    * **DSCP/ECN** (differentiated services / explicit congestion notification) mark priority and congestion; identification, flags and fragment offset serve
       fragmentation (§6.9).
     """)
     B.code(fill(r"""
@@ -796,7 +796,8 @@ def build(B):
 
     **Traceroute** exploits TTL: it sends probes with TTL = 1, 2, 3, …. The probe with TTL = *k* dies
     at the *k*-th router, whose Time Exceeded reply reveals that router's address. Once TTL is large
-    enough, the probe reaches the destination, which replies normally.
+    enough, the probe reaches the destination itself, which answers with an Echo Reply (for ICMP probes) or an ICMP
+    *Port Unreachable* (for UDP probes sent to an unused port).
 
     ```
     TTL=1:  me --> R1 (TTL 1->0: drop)  ==> R1 replies "Time Exceeded"

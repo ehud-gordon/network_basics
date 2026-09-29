@@ -68,7 +68,7 @@ def build(B):
     ## 7.1 Private and public addresses
 
     IPv4 has only $2^{32} \approx 4.3$ billion addresses, far fewer than devices. **RFC 1918**
-    therefore reserves three **private** ranges that anyone may use inside their own network and
+    therefore reserves three **private** ranges (an RFC, "request for comments", is an Internet standard document) that anyone may use inside their own network and
     that Internet routers **never** forward:
 
     | range | CIDR | typical use |
@@ -138,10 +138,11 @@ def build(B):
     B.md(r"""
     ## 7.2 NAT and PAT
 
-    Private addresses cannot appear on the Internet, so the home router performs **NAT** (network
-    address translation), or more precisely **PAT** (port address translation). It rewrites every
-    outgoing packet's source IP and port to its **one public IP** and a port it picks, and remembers
-    the mapping:
+    Recall that a *port* is the 16-bit number (Part 3) identifying a program on a host; `IP:port`
+    names one endpoint. Private addresses cannot appear on the Internet, so the home router performs
+    **NAT** (network address translation), or more precisely **PAT** (port address translation). It
+    rewrites every outgoing packet's source IP and port to its **one public IP** and a port it picks,
+    and remembers the mapping:
 
     ```
     inside (private)                   NAT table                     outside (public)
@@ -151,8 +152,8 @@ def build(B):
     ```
 
     A reply whose destination port has **no** mapping is **dropped**. The router must also fix the
-    IP header checksum and the transport-layer checksum, because the transport checksum covers the
-    addresses too. Here, a *port* is the 16-bit number from Part 3 that identifies a program on a host.
+    IP header checksum, and also the transport-layer checksum, which covers the ports and (through a
+    so-called pseudo-header, §8.3) the IP addresses as well.
     """)
     B.exercise("7.2", "Simulate a NAT",
                r"""
@@ -407,7 +408,10 @@ def build(B):
 
     Humans use names; IP uses addresses. **DNS** (Domain Name System) is a distributed database that
     maps names to **records**: `A` (IPv4 address), `AAAA` (IPv6), `CNAME` (alias for another name),
-    `MX` (mail server), `NS` (which servers are authoritative for a zone). Names form a tree read right to left:
+    `MX` (mail server), `NS` (which servers are authoritative for a zone). A **zone** is a part of the name tree
+    run by one organisation (e.g. `example.com`); its **authoritative** servers hold the original records, while
+    everyone else only caches them. Names form a tree read right to left; the top level below the root (`.com`,
+    `.org`, `.de`) is the **TLD** (top-level domain):
 
     ```
     stub resolver (in your OS)
@@ -559,11 +563,12 @@ def build(B):
     exchange and every device involved until the first byte of the page arrives. (Plain HTTP on port 80, so no encryption
     step.)""",
                r"""
-               1. **Wi-Fi association** (L1/L2): the laptop's NIC associates with the **AP** in the home box.
-               2. **DHCP DORA** (UDP 68→67, broadcast frames to `ff:ff:ff:ff:ff:ff`): the AP bridges them to the box's **DHCP
+               1. **Wi-Fi association** (L1/L2): the laptop's NIC joins the **AP**'s wireless network (the radio-level
+                  handshake that admits a device to the Wi-Fi LAN; its details are beyond this notebook).
+               2. **DHCP DORA** (UDP 68→67; Discover and Request are broadcast to `ff:ff:ff:ff:ff:ff`, Offer and Ack may be unicast): the AP bridges them to the box's **DHCP
                   server**, and the laptop learns, e.g., `192.168.1.23/24`, gateway `192.168.1.1`, DNS server `192.168.1.1`.
                3. **ARP** for `192.168.1.1` (broadcast request, unicast reply): the laptop needs the gateway's MAC because
-                  both the DNS server and every remote host are reached through it.
+                  the gateway is also its DNS server, and every remote host is reached through it.
                4. **DNS** query `example.com A?` (UDP port 53) to the box's **DNS forwarder**. On a cache miss the forwarder
                   sends it on: **router** → **NAT** rewrites the source to the public IP → **modem** modulates it onto
                   DSL/coax/fibre → **ISP routers** (longest-prefix match at each hop, TTL−1, new L2 header per link) → the
