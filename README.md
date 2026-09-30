@@ -50,6 +50,8 @@ the Intel build, which runs under Rosetta: `CONDA_SUBDIR=osx-64 mamba create -n 
 running the environment's compiler (`x86_64-conda-linux-gnu-c++`). If that compiler is not on
 `PATH`, every cell fails with `cannot extract standard library include paths`.
 
+**Easiest:** run `./run_lab.sh` — it finds the `netlab` env, puts its compiler on `PATH`, ignores user-site packages, checks the kernel, and starts JupyterLab bound to localhost only.
+
 Work through the notebook top to bottom. If a cell reports a *redefinition* error (re-running a
 definition cell), restart the kernel and use *Run All Above*.
 
